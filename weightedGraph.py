@@ -118,7 +118,7 @@ class Graph:
         # means that it most cases, the value and index of the node will
         # be the same. This cannot be relied upon in cases where a node
         # has been deleted.
-        self._nodes: list[int] = [0]
+        self._nodes: list[int] = []
 
         # Array of edges. Edges are represented by a tuple containing
         # the origin node ID, the destination node ID and the cost.
@@ -279,14 +279,15 @@ class Graph:
         
         # We don't need to extend the first time as we start with 1
         # space
-        if self.count == 1:
-            pass
+        if self.ncount == 0:
+            last = -1
         else:
             self._extendMatrix()
+            last = self._nodes[-1]
         
-        self._nodes.append(self.y)
+        self._nodes.append(last+1) # Increment node ID
         
-        return self.y-1
+        return self._nodes[-1]
 
     def addEdge(
             self, 
@@ -315,6 +316,8 @@ class Graph:
         :type directional: bool, optional
         :raises NonDirectedError: The graph is non-directed but a
             directed edge was being created.
+        :raises IllegalArgumentError: The source and destination node
+            cannot be the same.
         :return: The ID of the edge or in case of the graph being and a
            bidirectional edge being created when the graph is directed,
            a list containing the IDs of both edges with the first ID
@@ -323,6 +326,11 @@ class Graph:
         """
 
         id = [None, None]
+
+        if source == destination:
+            raise IllegalArgumentError(
+                "The source and destination node cannot be the same"
+            )
 
         if directional:
             if not self._directed:
@@ -335,7 +343,72 @@ class Graph:
                 id[1] = self._addEdge(destination, source, cost)
                 return id
             else:
-                return self._addEdge(source, destination, cost)
+                # For an undirected graph, we only use half of the graph
+                # so we must make sure nothing is below the horizontal
+                # line.
+                first_node = min(source, destination)
+                second_node = max(source, destination)
+                return self._addEdge(first_node, second_node, cost)
+
+    def neighbours(self, node: int) -> list[int]:
+        """
+        neighbours Get a list of neighbours
+
+        Returns a list of neighbours of a given node
+
+        :param node: The ID of the node to check
+        :type node: int
+        :return: A list of neighbouring nodes
+        :rtype: list[int]
+        """
+
+        nodes: list[int] = []
+
+        for i, val in enumerate(self._matrix[node]):
+            if val is not None:
+                nodes.append(self.nodes[i])
+        
+        if not self._directed:
+            # We also need to go from dest to source if undirected
+            for i in range(node):
+                if self._matrix[i][node] is not None:
+                    nodes.append(self.nodes[i])
+
+        return nodes
+
+    def edge(self, source: int, destination: int) -> int:
+        """
+        edge Get the cost of an edge
+
+        Gets the cost of the specified edge between the source and the
+        destination.
+
+        :param source: ID of the source node
+        :type source: int
+        :param destination: ID of destination node
+        :type destination: int
+        :return: Cost of path.
+        :rtype: int
+        """
+
+        if self._directed == False:
+            node_1 = min(source, destination)
+            node_2 = max(source, destination)
+        else:
+            node_1 = source
+            node_2 = destination
+
+        if self._matrix[node_1][node_2] is not None:
+            return self._matrix[node_1][node_2]
+        
+        if self._directed == False:
+            # Also check opposite direction for non directed
+            if self._matrix[node_2][node_1] is not None:
+                return self._matrix[node_2][node_1]
+
+        # There isn't a path between these two nodes
+        return None
+            
 
     
 def test() -> None:
