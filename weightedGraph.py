@@ -162,7 +162,7 @@ class Graph:
         return self._nodes
 
     @property
-    def count(self) -> int:
+    def ncount(self) -> int:
         """ 
         count Number of nodes in graph
         
@@ -180,6 +180,16 @@ class Graph:
         """
 
         return self._directed
+
+    @property
+    def ecount(self) -> int:
+        """
+        ecount Number of edges present in the graph
+
+        :rtype: int
+        """
+
+        return len(self._edges)
 
     def __str__(self) -> str:
         """
