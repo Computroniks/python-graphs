@@ -409,7 +409,6 @@ class Graph:
         # There isn't a path between these two nodes
         return None
             
-
     
 def test() -> None:
     """
