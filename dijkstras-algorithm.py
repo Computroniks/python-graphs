@@ -1,13 +1,7 @@
-from weightedGraph import Graph
+#SPDX-FileCopyrightText: 2022 Matthew Nickson <mnickson@sidingsmedia.com>
+#SPDX-License-Identifier: MIT
 
-def _getPath(source: int, destination: int, prev: list[int]) -> list[int]:
-    sequence: list[int] = []
-    u = destination
-    if prev[u] is not None or u == source:
-        while u is not None:
-            sequence.insert(0, u)
-            u = prev[u]
-    return sequence
+from weightedGraph import Graph
 
 
 def dijkstra(graph: Graph, source: int, destination: int) -> list[int]:
@@ -24,29 +18,37 @@ def dijkstra(graph: Graph, source: int, destination: int) -> list[int]:
     :rtype: list[int]
     """
 
-    dist = [float('inf') for i in range(graph.ncount)]
-    prev = [None for i in range(graph.ncount)]
-    nodes = []
-    for node in graph.nodes:
-        nodes.append(node)
+    unvisited = graph.nodes.copy()
+    distance = [float("inf") for i in range(len(unvisited))]
+    previous = [None for i in range(len(unvisited))]
+    distance[source] = 0
 
-    dist[source] = 0
-
-    while len(nodes) > 0:
-        u = min((val, i) for i, val in enumerate(nodes) if val is not None)[0]
-        nodes.remove(u)
-
-        # if u == destination:
-        #     break
-
-        for neighbor in graph.neighbours(u):
-            alt = dist[u] + graph.edge(u, neighbor)
-            if alt < dist[neighbor]:
-                dist[neighbor] = alt
-                prev[neighbor] = u
-    
-    return _getPath(source, destination, prev)
+    while len(unvisited) != 0:
+        # Get the lowest distance unvisited node
+        options = []
+        for node in unvisited:
+            options.append((distance[node], node))
+        current_node = min(options)[1]
+        
+        if current_node == destination:
+            # Done, now just get path
+            path = []
+            prev = destination
+            while prev != None:
+                path.append(prev)
+                prev = previous[prev]
+            return path[::-1]
+        else:
+            for neighbor in graph.neighbours(current_node):
+                if neighbor in unvisited:
+                    temp_dist = distance[current_node] \
+                                + graph.edge(current_node, neighbor)
+                    if temp_dist < distance[neighbor]:
+                        distance[neighbor] = temp_dist
+                        previous[neighbor] = current_node
             
+            unvisited.remove(current_node)
+
 
 def main() -> None:
     """
@@ -54,17 +56,6 @@ def main() -> None:
 
     Generate a graph before running the shortest path first algorithm.
     """
-
-    # The graph should have the following routes from 0
-    # Node 1 - -> 0 4 1
-    # Node 2 - -> 0 4 3 2
-    # Node 3 - -> 0 4 3
-    # Node 4 - -> 0 4
-    # Node 5 - -> 0 4 1 6 5
-    # Node 6 - -> 0 4 1 6
-    # Node 7 - -> 0 4 1 6 7
-    # Node 8 - -> 0 4 3 2 8
-    # Node 9 - -> 0 4 1 6 7 9
 
     # (source, dest, correct)
     test_data = [
@@ -104,13 +95,18 @@ def main() -> None:
         print(f" with ID {graph.addEdge(edge[0], edge[1], edge[2])}")
 
     print(graph)
-
+    fail = False
     for test in test_data:
-        print(f"Testing {test[0]} to {test[1]}")
-        if (res := dijkstra(graph, test[0], test[1])) == test[2]:
-            print("Passed")
-        else:
+        if (res := dijkstra(graph, test[0], test[1])) != test[2]:
+            print(f"Testing {test[0]} to {test[1]}")
             print(f"Failed - Got {res} Expected {test[2]}")
+            fail = True
+            
+    if fail:
+        print("Some tests failed")
+    else:
+        print("All tests passed")
+
 
 if __name__ == "__main__":
     main()
